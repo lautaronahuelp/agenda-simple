@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useEventosValidate, useEventosSet} from "./context/EventosContext";
-import { cropDate, dateToLocaleString } from "./functions/custom_functions";
+import { cropDate, dateToLocaleString, parseHTMLDate, parseHTMLTime, calculateEndDatetime,calculateStartDatetime } from "./functions/custom_functions";
 
 export default function FormEvento({eventoInicial, error, onSubmit}) {
     const [formState, setFormState] = useState(eventoInicial);
     const validarEvento = useEventosValidate();
     const addEvento = useEventosSet();
     console.log(formState);
-    console.log(dateToLocaleString(new Date('2005-01-01T00:00:00.000Z')));
+
+    //TEMA NO PUEDE DURAR MENOS DE UN MINUTO. TEMA NO PUEDE DURAR MAS DE 24HS
+
+    //HANDLES
     function handleOnChangeNombre(e) {
         
         setFormState({
@@ -19,49 +22,67 @@ export default function FormEvento({eventoInicial, error, onSubmit}) {
     function handleOnChangeFechaInicio(e) {
         const evento = {...formState};
         //'0001-01-01T00:00:00.000Z'
-        const newEventoInicio = new Date(cropDate(e.target.value) + 'T' + dateToLocaleString(new Date(formState.eventoInicio)).slice(11, 16) + '-03:00');
-        newEventoInicio.setFullYear();
+        //console.log("new fecha inicio: ");
+        //console.log(e.target.value);
+        const [ year, month, day ] = parseHTMLDate(e.target.value);
 
         const eventoInicio = new Date(formState.eventoInicio);
-        eventoInicio.setFullYear(newEventoInicio.getFullYear());
-        eventoInicio.setMonth(newEventoInicio.getMonth());
-        eventoInicio.setDate(newEventoInicio.getDate());
+        eventoInicio.setFullYear(year);
+        eventoInicio.setMonth(month - 1);
+        eventoInicio.setDate(day);
        
-
-        const eventoFin = new Date(formState.eventoFin);
-        const newEventoFin = new Date(eventoInicio.valueOf() + 300000);
-
-        evento.eventoInicio = eventoInicio.toJSON();
-
-        if(eventoFin < eventoInicio) {
-            evento.eventoFin = newEventoFin.toJSON();
-        }
+        calculateEndDatetime(evento, eventoInicio, formState);
         
-        console.log('inicio>' + evento.eventoInicio + '|fin>' + evento.eventoFin);
+        //console.log('inicio>' + evento.eventoInicio + '|fin>' + evento.eventoFin);
 
         setFormState({...evento});
 
     }
 
     function handleOnChangeHoraInicio(e) {
-        setFormState({
-            ...formState,
-            horaInicio: e.target.value,
-        })
+        const evento = {...formState};
+        const [ hours, minutes ] = parseHTMLTime(e.target.value);
+
+        const eventoInicio = new Date(formState.eventoInicio);
+        eventoInicio.setHours(hours);
+        eventoInicio.setMinutes(minutes);
+
+        calculateEndDatetime(evento, eventoInicio, formState);
+
+        setFormState({...evento});
+
     }
 
     function handleOnChangeFechaFin(e) {
-        setFormState({
-            ...formState,
-            fechaFin: e.target.value,
-        })
+        const evento = {...formState};
+        //'0001-01-01T00:00:00.000Z'
+        //console.log("new fecha inicio: ");
+        //console.log(e.target.value);
+        const [ year, month, day ] = parseHTMLDate(e.target.value);
+
+        const eventoFin = new Date(formState.eventoFin);
+        eventoFin.setFullYear(year);
+        eventoFin.setMonth(month - 1);
+        eventoFin.setDate(day);
+       
+        calculateStartDatetime(evento, eventoFin, formState);
+        
+        //console.log('inicio>' + evento.eventoInicio + '|fin>' + evento.eventoFin);
+
+        setFormState({...evento});
     }
 
     function handleOnChangeHoraFin(e) {
-        setFormState({
-            ...formState,
-            horaFin: e.target.value,
-        })
+        const evento = {...formState};
+        const [ hours, minutes ] = parseHTMLTime(e.target.value);
+
+        const eventoFin = new Date(formState.eventoFin);
+        eventoFin.setHours(hours);
+        eventoFin.setMinutes(minutes);
+
+        calculateStartDatetime(evento, eventoFin, formState);
+
+        setFormState({...evento});
     }
 
     function handleOnSubmit() {
